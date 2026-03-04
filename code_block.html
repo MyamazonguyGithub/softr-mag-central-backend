@@ -1,0 +1,564 @@
+<style>
+  .custom-code-block-content {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+</style>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container py-4" id="form-container">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="mb-4 text-center">
+            <img 
+              src="https://assets.softr-files.com/applications/cf0167f9-e044-43e3-a260-28b90788baf6/assets/aaf3f7f5-22bc-4ee5-992f-ee63e4d7c2c7.jpeg" 
+              alt="Banner"
+              class="img-fluid rounded"
+              style="
+                width: 70%;
+                height: 100px;
+                object-fit: cover;
+                object-position: center;
+              "
+            />
+          </div>
+          <h4 class="card-title mb-4">
+            Organizational Scorecard
+          </h4>
+          <p class="card-text mb-4">Please visit the <a href="SOP_URL" target="_blank">SOP</a> for more information on how to fill out this form.</p>
+          <div id="form-container">
+
+            <form class="row g-3">
+
+              <fieldset class="border p-3 rounded mt-4" id="scorecard_proctor_fieldset">
+                <legend class="float-none w-auto px-2 fs-5">Scorecard Proctor</legend>
+                <div class="row g-3">
+                  <!--fields-->
+                </div>
+              </fieldset>
+
+              <fieldset class="border p-3 rounded mt-4" id="employee_being_scored_fieldset">
+                <legend class="float-none w-auto px-2 fs-5">Employee Being Scored</legend>
+                <div class="row g-3">
+                  <!--fields-->
+                </div>
+              </fieldset>
+              
+              <fieldset class="border p-3 rounded mt-4" id="kpi_checklist_fieldset">
+                <legend class="float-none w-auto px-2 fs-5">KPI Checklist</legend>
+                <div class="table-responsive" id="kpi_checklist">
+                  <!-- KPI checklist here -->
+                </div>
+              </fieldset>
+              
+              <!-- CORE VALUES -->
+              <fieldset class="border p-3 rounded mt-4" id="core_values_fieldset">
+                <legend class="float-none w-auto px-2 fs-5">Core Values</legend>
+                <div class="row align-items-start" id="core_values">
+                  <!-- Core values will be generated here -->
+                </div>
+              </fieldset>
+
+              <!-- MANAGER VALUES -->
+              <fieldset class="border p-3 rounded mt-4" style="display: none;" id="manager_values_fieldset">
+                <legend class="float-none w-auto px-2 fs-5">Manager Values</legend>
+                <div class="row align-items-start" id="manager_values">
+                  <!-- Manager values will be generated here -->
+                </div>
+              </fieldset>
+
+              <!-- Work Ethic -->
+              <fieldset class="border p-3 rounded mt-4" id="work_ethic_fieldset">
+                <legend class="float-none w-auto px-2 fs-5">Work Ethic</legend>
+                <div class="row g-3" id="work_ethic">
+                  <!-- Work ethic fields will be generated here -->
+                </div>
+              </fieldset>
+
+              <!-- Conclusion -->
+              <fieldset class="border p-3 rounded mt-4" id="conclusion_fieldset">
+                <legend class="float-none w-auto px-2 fs-5">Conclusion</legend>
+                <div class="row g-3">
+                  <!-- Conclusion fields will be generated here -->
+                </div>
+              </fieldset>
+              <!-- Submit Button -->
+              <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                  Submit Scorecard
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const leadYes = document.getElementById('leadYes');
+    const leadNo = document.getElementById('leadNo');
+    const managerValuesFieldset = document.getElementById('manager_values');
+
+    function toggleManagerValues() {
+      if (leadYes.checked) {
+        managerValuesFieldset.style.display = 'block';
+      } else {
+        managerValuesFieldset.style.display = 'none';
+      }
+    }
+
+    toggleManagerValues();
+
+    leadYes.addEventListener('change', toggleManagerValues);
+    leadNo.addEventListener('change', toggleManagerValues);
+  });
+
+  const descriptions = {
+    plus: "Performance exceeds expectations. Strong communication and proactive updates.",
+    mid: "Performance meets expectations but has occasional gaps.",
+    minus: "Performance below expectations. Communication issues impacting workflow."
+  };
+
+  document.querySelectorAll('input[name="score1"]').forEach(radio => {
+    radio.addEventListener("change", function () {
+      document.getElementById("score1_description").innerText = descriptions[this.value];
+    });
+  });
+
+
+
+</script> -->
+<script>
+
+document.addEventListener("DOMContentLoaded", async function () {
+  
+  const toSafeKey = (value, fallback) => {
+    const normalized = (value || fallback || "field")
+      .toString()
+      .trim()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-zA-Z0-9_]/g, "")
+      .toLowerCase();
+    return normalized || fallback || "field";
+  };
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const recordId = urlParams.get('recordId');
+  //const baseUrl = window.location.origin;
+  const baseUrl = "http://127.0.0.1:8000";
+  const API_URL = `${baseUrl}/form-schema?rec_id=${recordId}`; 
+  
+  let schema = null;
+  const response = await fetch(API_URL);
+  schema = await response.json();
+  console.log(schema);
+  console.log("Schema Loaded:", schema);
+
+  schema.forEach(section => {
+
+    const fieldset = [...document.querySelectorAll("fieldset")]
+      .find(fs => fs.querySelector("legend")?.innerText.trim() === section.section);
+
+    if (!fieldset) return;
+
+    const sectionNames = ["kpi checklist", "core values", "manager values", "work ethic"];
+    const isPartOfSectionNames = !sectionNames.includes(section.section.toLowerCase());
+
+    if (isPartOfSectionNames) {
+      const container = fieldset.querySelector(".row") || fieldset
+      section.fields.forEach((field, fieldIndex) => {
+    
+      const col = document.createElement("div");
+      col.className = "col-md-6 mb-3";
+
+      const label = document.createElement("label");
+      label.className = field.type == "radio" ? "form-label fw-semibold d-block" : "form-label fw-semibold" ;
+      label.innerText = field.Label || field.label;
+
+      const fieldsetNamePrefix = fieldset.id || `${toSafeKey(section.section, "section")}_fieldset`;
+      const fieldKey = toSafeKey(field.Label || field.label, `field_${fieldIndex + 1}`);
+      const baseInputName = `${fieldsetNamePrefix}[${fieldKey}]`;
+
+      col.appendChild(label);
+
+      /* ---------------- TEXT / EMAIL / DATE / TEXTAREA ---------------- */
+
+      if (!field.type || field.type === "text" || field.type === "email" || field.type === "date") {
+
+        const input = document.createElement("input");
+        input.type = field.type || "text";
+        input.className = "form-control";
+        input.name = baseInputName;
+        if (section.section === "Scorecard Proctor"){
+          const user = window.logged_in_user || {};
+          input.value = field.type === "email" ? (user['softr_user_email'] ?? "") : (user['Full Name'] ?? "");
+
+          if (field.type === "email") {
+            const hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.name = `${fieldsetNamePrefix}[record_id]`;
+            hiddenInput.value = user['record_id'] ?? "recYxbtJqtsmEOnzn";
+            col.appendChild(hiddenInput);
+          }
+          
+        }else{
+          input.value = field.value || "";
+        }
+
+        col.appendChild(input);
+      }
+
+      else if (field.type === "textarea") {
+
+        const textarea = document.createElement("textarea");
+        textarea.className = "form-control";
+        textarea.rows = 3;
+        textarea.name = baseInputName;
+        textarea.value = field.value || "";
+        col.className = "col-12 mb-3 w-100";
+        col.appendChild(textarea);
+      }
+
+      /* ---------------- RADIO ---------------- */
+
+      else if (field.type === "radio") {
+
+        const currentFieldLabel = (field.Label || field.label || "").trim().toLowerCase();
+        const isManagerRoleToggleField = currentFieldLabel === "is team lead, manager, director, or above";
+        const managerValuesFieldset = document.getElementById("manager_values_fieldset");
+
+        field.options.forEach(option => {
+
+          const radioWrapper = document.createElement("div");
+          radioWrapper.className = "form-check form-check-inline";
+
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.className = "form-check-input";
+          radio.name = baseInputName;
+          radio.value = option;
+
+          if (field.value && String(field.value).trim().toLowerCase() === String(option).trim().toLowerCase()) {
+            radio.checked = true;
+          }
+
+          if (isManagerRoleToggleField && managerValuesFieldset) {
+            const toggleManagerValues = () => {
+              const selectedRadio = document.querySelector(`input[name="${CSS.escape(radio.name)}"]:checked`);
+              const selectedValue = String(selectedRadio?.value || "").trim().toLowerCase();
+              const shouldShow = ["yes", "true", "1", "lead", "manager", "director"].some(keyword => selectedValue.includes(keyword));
+              managerValuesFieldset.style.display = shouldShow ? "block" : "none";
+            };
+
+            radio.addEventListener("change", toggleManagerValues);
+            toggleManagerValues();
+          }
+
+          const radioLabel = document.createElement("label");
+          radioLabel.className = "form-check-label ms-2";
+          radioLabel.innerText = option;
+
+          radioWrapper.appendChild(radio);
+          radioWrapper.appendChild(radioLabel);
+          col.appendChild(radioWrapper);
+
+        });
+
+      }
+      container.appendChild(col);
+
+    });
+    }
+    else{
+      /* ---------------- KPI Checklist ---------------- */
+      if (section.section.toLowerCase().includes("kpi checklist")) {
+        const container = fieldset.querySelector("#kpi_checklist") || fieldset;
+        const table = document.createElement("table");
+        table.className = "table align-middle";
+
+        const thead = document.createElement("thead");
+        thead.innerHTML = `
+          <tr>
+            <th style="width: 25%;">KPI Description</th>
+            <th style="width: 25%;">Expectations</th>
+            <th class="text-center" style="width: 15%;">Is the KPI Met?</th>
+            <th style="width: 35%;">Links</th>
+          </tr>
+        `;
+        thead.className = "table-success rounded-top";
+
+        const tbody = document.createElement("tbody");
+
+        section.fields.forEach((kpi, kpiIndex) => {
+          const tr = document.createElement("tr");
+          const itemIndex = kpiIndex + 1;
+
+          const tdDesc = document.createElement("td");
+          tdDesc.innerText = kpi.description;
+
+          const descHidden = document.createElement("input");
+          descHidden.type = "hidden";
+          descHidden.name = `${fieldset.id}[${itemIndex}_description]`;
+          descHidden.value = kpi.description || "";
+          tdDesc.appendChild(descHidden);
+
+          const tdExp = document.createElement("td");
+          tdExp.innerText = kpi.expectation;
+
+          const expHidden = document.createElement("input");
+          expHidden.type = "hidden";
+          expHidden.name = `${fieldset.id}[${itemIndex}_expectation]`;
+          expHidden.value = kpi.expectation || "";
+          tdExp.appendChild(expHidden);
+
+          const tdMet = document.createElement("td");
+          tdMet.className = "text-center";
+          const checkboxWrapper = document.createElement("div");
+          checkboxWrapper.className = "form-check d-flex justify-content-center";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "form-check-input";
+          checkbox.name = `${fieldset.id}[${itemIndex}_met]`;
+          checkboxWrapper.appendChild(checkbox);
+          tdMet.appendChild(checkboxWrapper);
+
+          const tdLinks = document.createElement("td");
+          const textarea = document.createElement("textarea");
+          textarea.className = "form-control";
+          textarea.style.height = "60px";
+          textarea.rows = 3;
+          textarea.name = `${fieldset.id}[${itemIndex}_links]`;
+          tdLinks.appendChild(textarea);
+
+          tr.appendChild(tdDesc);
+          tr.appendChild(tdExp);
+          tr.appendChild(tdMet);
+          tr.appendChild(tdLinks);
+          tbody.appendChild(tr);
+        });
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        container.appendChild(table);
+      }
+      else if (["core values", "manager values"].includes(section.section.toLowerCase())) {
+        /* ---------------- CORE VALUES / MANAGER VALUES ---------------- */
+        const container = section.section.toLowerCase().includes("core values") ? fieldset.querySelector("#core_values") : fieldset.querySelector("#manager_values");
+        section.fields.forEach((value, index) => {
+          const row = document.createElement("div");
+          row.className = "row align-items-start mt-4";
+          const itemIndex = index + 1;
+
+          const leftCol = document.createElement("div");
+          leftCol.className = "col-md-6";
+
+          const labelWrap = document.createElement("div");
+          const valueLabel = document.createElement("label");
+          valueLabel.className = "form-label fw-bold";
+          valueLabel.innerText = value.label;
+          labelWrap.appendChild(valueLabel);
+
+          const valueLabelHidden = document.createElement("input");
+          valueLabelHidden.type = "hidden";
+          valueLabelHidden.name = `${fieldset.id}[${itemIndex}_label]`;
+          valueLabelHidden.value = value.label || "";
+          labelWrap.appendChild(valueLabelHidden);
+
+          const btnGroup = document.createElement("div");
+          btnGroup.className = "btn-group mt-2";
+          btnGroup.role = "group";
+
+          const safeSectionKey = toSafeKey(section.section, "section");
+          const safeValueKey = toSafeKey(value.label || value.name, `value_${index + 1}`);
+          const radioGroupName = `${fieldset.id}[${itemIndex}_score]`;
+          const baseId = `score_${safeSectionKey}_${safeValueKey}_${index}`;
+          const descriptions = {
+            plus: value.plus || "No description provided.",
+            mid: value.mid || "No description provided.",
+            minus: value.minus || "No description provided."
+          };
+          const selectedScore = String(value.value || value.score || "").trim().toLowerCase();
+
+          [
+            { type: "plus", text: "+", btnClass: "btn-outline-success" },
+            { type: "mid", text: "+/-", btnClass: "btn-outline-warning" },
+            { type: "minus", text: "-", btnClass: "btn-outline-danger" }
+          ].forEach(option => {
+
+            const radio = document.createElement("input");
+            radio.type = "radio";
+            radio.className = "btn-check";
+            radio.name = radioGroupName;
+            radio.id = `${baseId}_${option.type}_${index}`;
+            radio.value = option.type;
+            radio.autocomplete = "off";
+            if (selectedScore === option.type) {
+              radio.checked = true;
+            }
+            radio.addEventListener("change", () => {
+              description.innerText = descriptions[option.type];
+            });
+
+            const labelBtn = document.createElement("label");
+            labelBtn.className = `btn ${option.btnClass}`;
+            labelBtn.htmlFor = radio.id;
+            labelBtn.innerText = option.text;
+
+            btnGroup.appendChild(radio);
+            btnGroup.appendChild(labelBtn);
+
+          });
+
+          leftCol.appendChild(labelWrap);
+          leftCol.appendChild(btnGroup);
+
+          const rightCol = document.createElement("div");
+          rightCol.className = "col-md-6";
+          const description = document.createElement("div");
+          description.className = "mt-4 mt-md-0 text-muted";
+          description.style.maxHeight = "102px";
+          description.style.overflowY = "auto";
+          description.innerText = descriptions[selectedScore] || "Select a rating to see the description.";
+          rightCol.appendChild(description);
+
+          row.appendChild(leftCol);
+          row.appendChild(rightCol);
+          container.appendChild(row);
+        });
+      }
+      else if (section.section.toLowerCase().includes("work ethic")) {
+        /* ---------------- WORK ETHIC ---------------- */
+        const container = fieldset.querySelector("#work_ethic") || fieldset;
+        section.fields.forEach((label, index) => {
+          const itemIndex = index + 1;
+          const rowDiv = document.createElement("div");
+          rowDiv.className = "row g-3";
+
+          const labelElem = document.createElement("label");
+          labelElem.className = "form-label fw-bold";
+          labelElem.innerText = label;
+          rowDiv.appendChild(labelElem);
+
+          const labelHidden = document.createElement("input");
+          labelHidden.type = "hidden";
+          labelHidden.name = `${fieldset.id}[${itemIndex}_label]`;
+          labelHidden.value = label || "";
+          rowDiv.appendChild(labelHidden);
+
+          const btnGroup = document.createElement("div");
+          btnGroup.className = "btn-group w-100 mt-3";
+          btnGroup.role = "group";
+
+          const radioGroupName = `${fieldset.id}[${itemIndex}_score]`;
+
+          for (let i = 1; i <= 5; i++) {
+            const radio = document.createElement("input");
+            radio.type = "radio";
+            radio.className = "btn-check";
+            radio.name = radioGroupName;
+            radio.id = `${fieldset.id}_r${itemIndex}_${i}`;
+            radio.value = i;
+            radio.autocomplete = "off";
+
+            const radioLabel = document.createElement("label");
+            radioLabel.className = "btn btn-outline-secondary text-center";
+            radioLabel.htmlFor = radio.id;
+
+            const ratingNum = document.createElement("div");
+            ratingNum.className = "fw-bold";
+            ratingNum.innerText = i;
+            radioLabel.appendChild(ratingNum);
+
+            if (i === 1) {
+              const smallText = document.createElement("small");
+              smallText.className = "text-muted";
+              smallText.innerText = "Never";
+              radioLabel.appendChild(smallText);
+            } else if (i === 5) {
+              const smallText = document.createElement("small");
+              smallText.className = "text-muted";
+              smallText.innerText = "Always";
+              radioLabel.appendChild(smallText);
+            }
+
+            btnGroup.appendChild(radio);
+            btnGroup.appendChild(radioLabel);
+          }
+
+          rowDiv.appendChild(btnGroup);
+          container.appendChild(rowDiv);
+        });
+      }
+    }
+  });
+
+  // Form submission handler
+  const form = document.querySelector('form');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...';
+
+    const formData = new FormData(form);
+    const data = {};
+    
+    // Convert FormData to object
+    for (let [key, value] of formData.entries()) {
+      if (data[key]) {
+        // Handle multiple values for same key (like checkboxes)
+        if (Array.isArray(data[key])) {
+          data[key].push(value);
+        } else {
+          data[key] = [data[key], value];
+        }
+      } else {
+        data[key] = value;
+      }
+    }
+    
+    // Add recordId if available
+    const urlParams = new URLSearchParams(window.location.search);
+    const recordId = urlParams.get('recordId');
+    if (recordId) {
+      data.recordId = recordId;
+    }
+
+    try {
+      const response = await fetch(`${baseUrl}/submit-form`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert('Scorecard submitted successfully!');
+        // Optionally redirect or reset form
+        // window.location.href = '/success';
+      } else {
+        const error = await response.json();
+        alert('Error submitting form: ' + (error.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('Network error. Please try again.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Submit Scorecard';
+    }
+  });
+
+});
+
+</script>
