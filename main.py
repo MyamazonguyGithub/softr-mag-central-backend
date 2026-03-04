@@ -8,7 +8,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://central.myamazonguy.com"],
+    allow_origins=["https://central.myamazonguy.com", "https://siobhan3170.preview.softr.app"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
