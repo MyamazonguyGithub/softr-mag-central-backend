@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, HTTPException
 from typing import Any, Dict
 import json
 import re
@@ -156,7 +156,7 @@ FORM_SCHEMAS = [
                 "minus": "Speaks to client or teamates in a rude or condescending way. Make others feel bad due to inappriate gestures, expressions or actions."
             },
             {
-                "label": "Compete - We are a team not a family. Crush your competitors. Play to win. ",
+                "label": "Compete - We are a team not a family. Crush your competitors. Play to win.",
                 "plus": "With an unwavering drive and winning mindset, Committed to pushing the boundaries of what is possible. Tirelessly strive for excellence in every endeavor, breaking through limitations and setting new achievement standards. Has dedication to surpassing expectations and achieving unparalleled success fuels every move, not only meet but exceed the highest benchmarks of performance.",
                 "mid": "Routinely navigates challenges and drives success by leveraging the strength of the team.",
                 "minus": "Misses opportunities to instill a sense of urgency for reaching goals and meeting deadlines."
@@ -209,17 +209,76 @@ FORM_SCHEMAS = [
                 "value": ""
             }
         ]
+    },
+    {
+        "section": "Technical Skill",
+        "fields": [
+            {
+                "label": "PPC Knowledge - Is Able to Login to Amazon, Identify Issues with PPC Campaigns, Point Out Solutions, Understands Basic KPIs (ACOS, TACOS, etc), and Understands MAG's System for Solving Issues",
+                "position": ["advertising specialist", "brand manager"],
+                "1": "Requires close and extensive guidance. Cannot start unless taught.",
+                "2": "Needs to confirm action with peers. Always seeks answers and confirmation to get task done. Revisions and QA is still needed. Needs more time to complete tasks.",
+                "3": "Requires little or no guidance. Minimal QA needed. Gets tasks done on time.",
+                "4": "Stands alone and can work with no supervision. Can QA own work. Completes tasks ahead of time. Can teach others.",
+                "5": "Requires no oversight; serves as key resource and advises others. Can already anticipate future needs, create sop's and templates, train whole org and can correctly and consistently help in slack groups."
+            },
+            {
+                "label": "Amazon SEO Knowledge - Understands Amazon SEO Basics, MAG's SEO Phases, and What Should and Should not be done in regards to SEO. (Copy, Alt Text, backend, etc)",
+                "position": ["amazon specialist", "brand manager"],
+                "1": "Requires close and extensive guidance. Cannot start unless taught.",
+                "2": "Needs to confirm action with peers. Always seeks answers and confirmation to get task done. Revisions and QA is still needed. Needs more time to complete tasks.",
+                "3": "Requires little or no guidance. Minimal QA needed. Gets tasks done on time.",
+                "4": "Stands alone and can work with no supervision. Can QA own work. Completes tasks ahead of time. Can teach others.",
+                "5": "Requires no oversight; serves as key resource and advises others. Can already anticipate future needs, create sop's and templates, train whole org and can correctly and consistently help in slack groups."
+            },
+            {
+                "label": "Amazon Brand Registry Knowledge - Understands the Benefits of Brand Registry, Features, How to Manage Access Issues, how to report hijackers, Brand Name Changes, MAG Processes, and Basic Trademark Knowledge.",
+                "position": ["amazon specialist", "brand manager"],
+                "1": "Requires close and extensive guidance. Cannot start unless taught.",
+                "2": "Needs to confirm action with peers. Always seeks answers and confirmation to get task done. Revisions and QA is still needed. Needs more time to complete tasks.",
+                "3": "Requires little or no guidance. Minimal QA needed. Gets tasks done on time.",
+                "4": "Stands alone and can work with no supervision. Can QA own work. Completes tasks ahead of time. Can teach others.",
+                "5": "Requires no oversight; serves as key resource and advises others. Can already anticipate future needs, create sop's and templates, train whole org and can correctly and consistently help in slack groups."
+            },
+            {
+                "label": "Amazon Merchandising/Catalog Knowledge - Understand how to create a listing, how to make a parentage, audit an account, find and solve BSR issues, knows how to audit accounts, utilize a flat file for listing changes, etc.",
+                "position": ["amazon specialist", "brand manager"],
+                "1": "Requires close and extensive guidance. Cannot start unless taught.",
+                "2": "Needs to confirm action with peers. Always seeks answers and confirmation to get task done. Revisions and QA is still needed. Needs more time to complete tasks.",
+                "3": "Requires little or no guidance. Minimal QA needed. Gets tasks done on time.",
+                "4": "Stands alone and can work with no supervision. Can QA own work. Completes tasks ahead of time. Can teach others.",
+                "5": "Requires no oversight; serves as key resource and advises others. Can already anticipate future needs, create sop's and templates, train whole org and can correctly and consistently help in slack groups."
+            },
+            {
+                "label": "Amazon Troubleshooting Knowledge - Know's how to make a POA, unsuspend accounts, file appeals, address and resolve policy violations, etc.",
+                "position": ["amazon specialist", "brand manager"],
+                "1": "Requires close and extensive guidance. Cannot start unless taught.",
+                "2": "Needs to confirm action with peers. Always seeks answers and confirmation to get task done. Revisions and QA is still needed. Needs more time to complete tasks.",
+                "3": "Requires little or no guidance. Minimal QA needed. Gets tasks done on time.",
+                "4": "Stands alone and can work with no supervision. Can QA own work. Completes tasks ahead of time. Can teach others.",
+                "5": "Requires no oversight; serves as key resource and advises others. Can already anticipate future needs, create sop's and templates, train whole org and can correctly and consistently help in slack groups."
+            },
+            {
+                "label": "Amazon Creative Design - Know's how to make A+ content, info-graphics, identify conversion issues, use photoshop, follow mag process, understand brand identity, etc",
+                "position": ["graphic designer"],
+                "1": "Requires close and extensive guidance. Cannot start unless taught.",
+                "2": "Needs to confirm action with peers. Always seeks answers and confirmation to get task done. Revisions and QA is still needed. Needs more time to complete tasks.",
+                "3": "Requires little or no guidance. Minimal QA needed. Gets tasks done on time.",
+                "4": "Stands alone and can work with no supervision. Can QA own work. Completes tasks ahead of time. Can teach others.",
+                "5": "Requires no oversight; serves as key resource and advises others. Can already anticipate future needs, create sop's and templates, train whole org and can correctly and consistently help in slack groups."
+            }
+        ]
     }
 ]
 @router.get("/form-schema")
 async def get_schema(rec_id: str):
     userInfo = get_user(rec_id)
+    if not userInfo: raise HTTPException(status_code=404, detail="User not found")
 
-    #kpi checklist
     position = userInfo.get('Current Position Title', None)[0]
-    if not position: return {"error": "Employee not found!"}
+    if not position: raise HTTPException(status_code=404, detail="Position title not found for user")
     kpi_checklist_fields = get_kpi_checklist_fields(position)
-
+        
     #Employee being scored
     target = next( (schema for schema in FORM_SCHEMAS if schema["section"] == "Employee Being Scored"), None )
     for field in target["fields"]:
