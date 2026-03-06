@@ -199,12 +199,12 @@ FORM_SCHEMAS = [
                 "value": ""
             },
             {
-                "label": "Why? (Required written explanation)",
+                "label": "Please provide justification. (Reminder: Raises are intended for team members who have contributed beyond what is expected of their role, not simply for performing their assigned responsibilities.)",
                 "type": "textarea",
                 "value": ""
             },
             {
-                "label": "Please list any special projects the employee has completed outside of his/her core role responsibilities.",
+                "label": "Do you have any further details to support your justification? This can include special projects or other significant contributions; please provide supporting evidence if available.",
                 "type": "textarea",
                 "value": ""
             }
